@@ -65,20 +65,14 @@ public class Main {
             lines
                     .filter(line -> line.length() == numberOfChars)
                     .forEachOrdered(line -> {
-                        // check every character o4f the dictionary word
+                        // check every character of the dictionary word
                         for (int i = 0; i < line.length(); i++) {
-                            boolean matchChar = false;
-
-                            // check against any possible character
-                            for (int j = 0; j < possibleChars[i].length; j++) {
-                                if (Character.toUpperCase(line.charAt(i)) == Character.toUpperCase(possibleChars[i][j])) {
-                                    matchChar = true;
-                                    break;
-                                }
-                            }
+                            char currentChar = line.charAt(i);
+                            boolean matched = Stream.of(possibleChars[i])
+                                    .anyMatch(character -> Character.toUpperCase(currentChar) == Character.toUpperCase(character));
 
                             // skip if no match
-                            if (!matchChar) break;
+                            if (!matched) break;
 
                             // match: add to possible words
                             if (i == line.length() - 1) result.add(line);
