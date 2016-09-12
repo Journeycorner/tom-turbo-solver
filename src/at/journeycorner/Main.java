@@ -7,9 +7,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Main {
 
@@ -58,8 +63,8 @@ public class Main {
 
     private static List<String> getPossibleAnswers(int numberOfChars, char[][] possibleChars) throws IOException {
         try (Stream<String> lines = Files.lines(Paths.get(DICTIONARY_PATH), Charset.defaultCharset())) {
-            return lines
-                    // filter for words with the correct size
+            return takeWhile(lines, line -> line.length() <= numberOfChars)
+                    // filter length
                     .filter(line -> line.length() == numberOfChars)
                     // every character of the dictionary word must be contained in possible characters of current position
                     .filter(line -> IntStream.range(0, line.length())
@@ -67,5 +72,31 @@ public class Main {
                                     .anyMatch(c -> c == Character.toLowerCase(line.charAt(i)))))
                     .collect(Collectors.toList());
         }
+    }
+
+    private static <T> Spliterator<T> takeWhile(
+            Spliterator<T> splitr, Predicate<? super T> predicate) {
+        return new Spliterators.AbstractSpliterator<T>(splitr.estimateSize(), 0) {
+            boolean stillGoing = true;
+
+            @Override
+            public boolean tryAdvance(Consumer<? super T> consumer) {
+                if (stillGoing) {
+                    boolean hadNext = splitr.tryAdvance(elem -> {
+                        if (predicate.test(elem)) {
+                            consumer.accept(elem);
+                        } else {
+                            stillGoing = false;
+                        }
+                    });
+                    return hadNext && stillGoing;
+                }
+                return false;
+            }
+        };
+    }
+
+    private static <T> Stream<T> takeWhile(Stream<T> stream, Predicate<? super T> predicate) {
+        return StreamSupport.stream(takeWhile(stream.spliterator(), predicate), false);
     }
 }
