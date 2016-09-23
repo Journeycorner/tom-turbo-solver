@@ -1,14 +1,10 @@
 package at.journeycorner;
 
 import java.io.IOException;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -56,7 +52,7 @@ public class Main {
                 System.out.println("Eingabe nicht korrekt, bitte nochmal:");
                 continue;
             }
-            return line.toLowerCase().toCharArray();
+            return line.toLowerCase().chars().distinct().sorted().toString().toCharArray();
         }
         return null;
     }
@@ -68,8 +64,8 @@ public class Main {
                     .filter(line -> line.length() == numberOfChars)
                     // every character of the dictionary word must be contained in possible characters of current position
                     .filter(line -> IntStream.range(0, line.length())
-                            .allMatch(i -> CharBuffer.wrap(possibleChars[i]).chars()
-                                    .anyMatch(c -> c == Character.toLowerCase(line.charAt(i)))))
+                            .allMatch(i ->
+                                    Arrays.binarySearch(possibleChars[i], Character.toLowerCase(line.charAt(i))) >= 0))
                     .collect(Collectors.toList());
         }
     }
