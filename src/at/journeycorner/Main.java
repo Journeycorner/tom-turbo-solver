@@ -1,5 +1,6 @@
 package at.journeycorner;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -60,42 +61,26 @@ public class Main {
         return null;
     }
 
-    private static List<String> getPossibleAnswers(int numberOfChars, List<Set<Character>> possibleChars) throws IOException {
-        try (Stream<String> lines = Files.lines(Paths.get(DICTIONARY_PATH), Charset.defaultCharset())) {
-            return takeWhile(lines, line -> line.length() <= numberOfChars)
-                    // filter length
-                    .filter(line -> line.length() == numberOfChars)
-                    // every character of the dictionary word must be contained in possible characters of current position
-                    .filter(line -> IntStream.range(0, line.length()).allMatch(i ->
-                            possibleChars.get(i).contains(Character.toLowerCase(line.charAt(i))))
-                    )
-                    .collect(Collectors.toList());
-        }
-    }
-
-    private static <T> Spliterator<T> takeWhile(
-            Spliterator<T> splitr, Predicate<? super T> predicate) {
-        return new Spliterators.AbstractSpliterator<T>(splitr.estimateSize(), 0) {
-            boolean stillGoing = true;
-
-            @Override
-            public boolean tryAdvance(Consumer<? super T> consumer) {
-                if (stillGoing) {
-                    boolean hadNext = splitr.tryAdvance(elem -> {
-                        if (predicate.test(elem)) {
-                            consumer.accept(elem);
-                        } else {
-                            stillGoing = false;
-                        }
-                    });
-                    return hadNext && stillGoing;
+    private static List<String> getPossibleAnswers(int numberOfChars, List<Set<Character>> possibleChars)
+            throws IOException {
+        List<String> results = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(DICTIONARY_PATH), Charset.defaultCharset())) {
+            String line;
+            SCAN_LINES: while ((line = reader.readLine()) != null) {
+                if (line.length() < numberOfChars) {
+                    continue;
                 }
-                return false;
+                if (line.length() > numberOfChars) {
+                    break;
+                }
+                for (int i = 0; i < line.length(); i++) {
+                    if (!possibleChars.get(i).contains(Character.toLowerCase(line.charAt(i)))) {
+                        continue SCAN_LINES;
+                    }
+                }
+                results.add(line);
             }
-        };
-    }
-
-    private static <T> Stream<T> takeWhile(Stream<T> stream, Predicate<? super T> predicate) {
-        return StreamSupport.stream(takeWhile(stream.spliterator(), predicate), false);
+        }
+        return results;
     }
 }
