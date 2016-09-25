@@ -21,10 +21,10 @@ public class Main {
         System.out.println("Wieviele Buchstaben hat das mögliche Lösungswort?");
         int numberOfChars = getIntInput();
 
-        char[][] possibleChars = new char[numberOfChars][];
+        List<Set<Character>> possibleChars = new ArrayList<>(numberOfChars);
         for (int i = 0; i < numberOfChars; i++) {
             System.out.println("Welche möglichen Buchstaben hat der " + (i + 1) + ". Buchstabe? (Bsp.: xyz)");
-            possibleChars[i] = getCharInput();
+            possibleChars.add(getCharInput());
         }
 
         System.out.println("Mögliche Antworten:");
@@ -42,7 +42,7 @@ public class Main {
         return 0;
     }
 
-    private static char[] getCharInput() {
+    private static Set<Character> getCharInput() {
         while (sc.hasNext()) {
             String line = sc.nextLine();
             if (line.isEmpty()) {
@@ -52,20 +52,23 @@ public class Main {
                 System.out.println("Eingabe nicht korrekt, bitte nochmal:");
                 continue;
             }
-            return line.toLowerCase().chars().distinct().sorted().toString().toCharArray();
+            return line.toLowerCase().chars()
+                    .distinct()
+                    .mapToObj(i -> (char) i)
+                    .collect(Collectors.toSet());
         }
         return null;
     }
 
-    private static List<String> getPossibleAnswers(int numberOfChars, char[][] possibleChars) throws IOException {
+    private static List<String> getPossibleAnswers(int numberOfChars, List<Set<Character>> possibleChars) throws IOException {
         try (Stream<String> lines = Files.lines(Paths.get(DICTIONARY_PATH), Charset.defaultCharset())) {
             return takeWhile(lines, line -> line.length() <= numberOfChars)
                     // filter length
                     .filter(line -> line.length() == numberOfChars)
                     // every character of the dictionary word must be contained in possible characters of current position
-                    .filter(line -> IntStream.range(0, line.length())
-                            .allMatch(i ->
-                                    Arrays.binarySearch(possibleChars[i], Character.toLowerCase(line.charAt(i))) >= 0))
+                    .filter(line -> IntStream.range(0, line.length()).allMatch(i ->
+                            possibleChars.get(i).contains(Character.toLowerCase(line.charAt(i))))
+                    )
                     .collect(Collectors.toList());
         }
     }
